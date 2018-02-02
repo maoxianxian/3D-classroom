@@ -606,8 +606,6 @@ GameObject:
   serializedVersion: 5
   m_Component:
   - component: {fileID: 4263024703224024}
-  - component: {fileID: 65909132014826048}
-  - component: {fileID: 54707690052236798}
   m_Layer: 0
   m_Name: desk
   m_TagString: Untagged
@@ -1054,7 +1052,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1647324330821360}
   m_LocalRotation: {x: 0.011266194, y: 0.019371748, z: -0.9995233, w: -0.021237873}
-  m_LocalPosition: {x: -1.727, y: 1.652, z: -0.086}
+  m_LocalPosition: {x: -1.261, y: 0.669, z: -0.164}
   m_LocalScale: {x: 1.2053069, y: 1.2053072, z: 1.2053071}
   m_Children:
   - {fileID: 4776838928983022}
@@ -2675,30 +2673,3 @@ MeshFilter:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1316526456788094}
   m_Mesh: {fileID: 4300030, guid: 94c3076511cb4fe4699855d756bf6634, type: 3}
---- !u!54 &54707690052236798
-Rigidbody:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1647324330821360}
-  serializedVersion: 2
-  m_Mass: 1
-  m_Drag: 0
-  m_AngularDrag: 0.05
-  m_UseGravity: 1
-  m_IsKinematic: 0
-  m_Interpolate: 0
-  m_Constraints: 0
-  m_CollisionDetection: 0
---- !u!65 &65909132014826048
-BoxCollider:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1647324330821360}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Size: {x: 0.35, y: 0.72, z: 0.45}
-  m_Center: {x: 0, y: 0, z: 0}
