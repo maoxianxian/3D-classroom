@@ -1,2 +1,8 @@
 Base path: C:/Program Files/Unity/Editor/Data
 Cmd: initializeCompiler
+Cmd: preprocess
+  insize=5890 outsize=5365 ok=1
+Cmd: preprocess
+  insize=5427 outsize=5227 ok=1
+Cmd: compileSnippet
+  api=4 type=0 insize=4108073 outsize=1182 kw=DIRECTIONAL PROJECTOR_OFF NORMAL_MAP
