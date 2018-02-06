@@ -6,23 +6,29 @@ public class teleport : MonoBehaviour {
 	GameObject ground;
 	RaycastHit hit;
 	GameObject lefthand;
-	GameObject left_far_hand;
 	GameObject righthand;
-	GameObject current=null;
+	GameObject leftcurrent=null;
 	GameObject closePlayer;
 	GameObject farPlayer;
+	GameObject leftpre;
+	GameObject rightpre;
+	Vector3 leftPrePos;
+	Vector3 rightPrePos;
+	float leftstilltime=0;
+	float rightstilltime=0;
 	Color lineColor=new Color(1,1,1);
-	float holdtime=0;
+	float leftholdtime=0;
+	float rightholdtime=0;
+	GameObject rightcurrent;
 	bool raycastmode=true;
 	// Use this for initialization
 	void Start () {
 		ground = GameObject.FindGameObjectWithTag ("floor");
 		closePlayer = GameObject.FindGameObjectWithTag ("closeplayer");
 		lefthand = closePlayer.transform.GetChild(2).gameObject;
-		righthand = closePlayer.transform.GetChild(4).gameObject;
 		farPlayer = GameObject.Find ("LocalAvatar 2");
-		left_far_hand = farPlayer.transform.GetChild (2).gameObject;
-		farPlayer.SetActive (false);
+		righthand = farPlayer.transform.GetChild (4).gameObject;
+		//farPlayer.SetActive (false);
 	}
 	// Update is called once per frame
 	void Update () {
@@ -46,48 +52,92 @@ public class teleport : MonoBehaviour {
 			//Debug.Log(GameObject.Find ("controller_left").transform.forward);
 		}
 
-		//raycast
-		if (raycastmode) {
-			//teleport
-			if(OVRInput.Get(OVRInput.Button.One,OVRInput.Controller.LTouch)){
-				if (Physics.Raycast (lefthand.transform.position, lefthand.transform.forward, out hit)) {
-					if (hit.transform.gameObject == ground) {
-						GameObject player = GameObject.FindGameObjectWithTag ("Player");
-						player.GetComponent<CharacterController> ().Move(hit.point-	player.transform.position);
-					}
+		//teleport
+		if(OVRInput.Get(OVRInput.Button.One,OVRInput.Controller.LTouch)){
+			if (Physics.Raycast (lefthand.transform.position, lefthand.transform.forward, out hit)) {
+				if (hit.transform.gameObject == ground) {
+					GameObject player = GameObject.FindGameObjectWithTag ("Player");
+					player.GetComponent<CharacterController> ().Move(hit.point-	player.transform.position);
 				}
 			}
-			//select
-			holdtime += Time.deltaTime;
-			if (OVRInput.Get (OVRInput.Button.Two, OVRInput.Controller.LTouch)) {
-				if (Physics.Raycast (lefthand.transform.position, lefthand.transform.forward, out hit)) {
-					if (current == null && holdtime > 1) {
-						GameObject currenthit = hit.transform.gameObject;
-						if (currenthit != ground && currenthit.tag != "wall") {
-							current = currenthit;
-							current.transform.parent = null;
-							current.transform.SetParent (lefthand.transform);
-							holdtime = 0;
-							current.GetComponent<Rigidbody> ().isKinematic = true;
-						} 
-					} else {
-						if (holdtime < 1) {
-							holdtime += Time.deltaTime;
-						} else {
-							current.transform.SetParent (GameObject.Find ("wall").transform);
-							current.GetComponent<Rigidbody> ().isKinematic = false;
-							current = null;
-							holdtime = 0;
-						}
-					}
-				}
-			}
-			if (current != null) {
-				current.transform.position += 0.1f * lefthand.transform.forward * OVRInput.Get (OVRInput.Axis2D.PrimaryThumbstick) [1];
-			}
-		} else {//gogo
-			
 		}
+		//select by raycast
+		leftholdtime += Time.deltaTime;
+		if (OVRInput.Get (OVRInput.Button.PrimaryThumbstick, OVRInput.Controller.LTouch)) {
+			if (Physics.Raycast (lefthand.transform.position, lefthand.transform.forward, out hit)) {
+				if (leftcurrent == null && leftholdtime > 1) {
+					GameObject currenthit = hit.transform.gameObject;
+					if (currenthit != ground && currenthit.tag != "wall") {
+						leftcurrent = currenthit;
+						leftcurrent.transform.parent = null;
+						leftcurrent.transform.SetParent (lefthand.transform);
+						leftholdtime = 0;
+						leftcurrent.GetComponent<Rigidbody> ().isKinematic = true;
+					} 
+				} else {
+					if (leftholdtime > 1) {
+						leftcurrent.transform.SetParent (GameObject.Find ("wall").transform);
+						leftcurrent.GetComponent<Rigidbody> ().isKinematic = false;
+						leftpre = leftcurrent;
+						leftstilltime = 0;
+						leftcurrent = null;
+						leftholdtime = 0;
+					}
+				}
+			}
+		}
+
+
+		if (leftcurrent != null) {
+			leftcurrent.transform.position += 0.1f * lefthand.transform.forward * OVRInput.Get (OVRInput.Axis2D.PrimaryThumbstick) [1];
+		}
+
+		//select gogo left hand
+		rightholdtime += Time.deltaTime;
+		Vector3 righthandPos=closePlayer.transform.GetChild(5).transform.localPosition;
+		farPlayer.transform.Translate ((righthandPos + new Vector3 (0.15f, 0, 0))*10.0f-farPlayer.transform.localPosition);
+		DrawLine (righthand.transform.position, righthand.transform.position+righthand.transform.forward*0.5f, Color.blue);
+		if (OVRInput.Get (OVRInput.Axis1D.PrimaryIndexTrigger, OVRInput.Controller.RTouch)!=0) {
+			if (Physics.Raycast (righthand.transform.position, righthand.transform.forward,out hit,0.5f)) {
+				if (rightcurrent == null && rightholdtime > 1) {
+					GameObject currenthit = hit.transform.gameObject;
+					if (currenthit != ground && currenthit.tag != "wall") {
+						rightcurrent = currenthit;
+						rightcurrent.transform.parent = null;
+						rightcurrent.transform.SetParent (righthand.transform);
+						rightholdtime = 0;
+						rightcurrent.GetComponent<Rigidbody> ().isKinematic = true;
+					} 
+				} else {
+					if (rightholdtime >1) {
+						rightcurrent.transform.SetParent (GameObject.Find ("wall").transform);
+						rightcurrent.GetComponent<Rigidbody> ().isKinematic = false;
+						rightpre = rightcurrent;
+						rightstilltime = 0;
+						rightcurrent = null;
+						rightholdtime = 0;
+					}
+				}
+			}
+		}
+
+		//make object upright
+		if (leftpre != null) {
+			if (leftpre.transform.position != leftPrePos) {
+				leftPrePos = leftpre.transform.position;
+			} else {
+				leftstilltime += Time.deltaTime;
+				if (leftstilltime > 0.6f) {
+					Vector3 axis = Vector3.Cross (new Vector3 (0, 1, 0), leftpre.transform.forward);
+					float dot = Vector3.Dot (new Vector3 (0, 1, 0), Vector3.Normalize (leftpre.transform.up));
+					Debug.Log (Mathf.Acos (dot) / Mathf.PI * 180.0f);
+					leftpre.transform.RotateAround (leftpre.transform.position, axis, -Mathf.Acos (dot) / Mathf.PI * 180.0f);
+					leftpre = null;
+					leftstilltime = 0;
+				}
+			}
+		}
+
 	}
 
 	void switchmode()
