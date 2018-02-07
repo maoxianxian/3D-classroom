@@ -27,6 +27,11 @@ public class teleport : MonoBehaviour {
 	int groupmode=1;
 	int copymode=2;
 	int distmode=3;
+	float grouptime=0;
+	bool finishgroup = false;
+	bool endgroup=false;
+	GameObject[] selectboxes;
+	List<GameObject> currentgroup;
 	// Use this for initialization
 	void Start () {
 		ground = GameObject.FindGameObjectWithTag ("floor");
@@ -34,7 +39,11 @@ public class teleport : MonoBehaviour {
 		lefthand = closePlayer.transform.GetChild(2).gameObject;
 		farPlayer = GameObject.Find ("LocalAvatar 2");
 		righthand = farPlayer.transform.GetChild (4).gameObject;
-		//farPlayer.SetActive (false);
+		selectboxes=new GameObject[3];
+		selectboxes[0]=GameObject.Find ("group");
+		selectboxes[1]=GameObject.Find ("copy");
+		selectboxes[2]=GameObject.Find ("distance");
+		currentgroup = new List<GameObject> ();
 	}
 	// Update is called once per frame
 	void Update () {
@@ -66,14 +75,8 @@ public class teleport : MonoBehaviour {
 						if (currenthit != ground && currenthit.tag != "wall" && currenthit.tag != "Player"&&currenthit.tag != "selectbox") {
 							leftcurrent = currenthit;
 							leftcurrent.transform.parent = null;
-							leftcurrent.transform.SetParent (lefthand.transform);
-							leftlastLocation = leftcurrent.transform.position;
 							leftholdtime = 0;
-							leftcurrent.GetComponent<Rigidbody> ().useGravity = false;
-							leftcurrent.GetComponent<Rigidbody> ().constraints = RigidbodyConstraints.FreezeRotation;
-							leftcurrent.GetComponent<Rigidbody> ().collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-
-							//leftcurrent.GetComponent<Rigidbody> ().detectCollisions = true;
+							hold (leftcurrent, lefthand);
 						} 
 					} else {
 						if (leftholdtime > 1) {
@@ -105,13 +108,8 @@ public class teleport : MonoBehaviour {
 						if (currenthit != ground && currenthit.tag != "wall" && currenthit.tag != "Player"&&currenthit.tag != "selectbox") {
 							rightcurrent = currenthit;
 							rightcurrent.transform.parent = null;
-							rightcurrent.transform.SetParent (righthand.transform);
 							rightholdtime = 0;
-							rightcurrent.GetComponent<Rigidbody> ().useGravity = false;
-							rightcurrent.GetComponent<Rigidbody> ().constraints = RigidbodyConstraints.FreezeRotation;
-							rightcurrent.GetComponent<Rigidbody> ().collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-
-							//rightcurrent.GetComponent<Rigidbody> ().isKinematic = true;
+							hold (rightcurrent, righthand);
 						} 
 					} else {
 						if (rightholdtime > 1) {
@@ -134,40 +132,73 @@ public class teleport : MonoBehaviour {
 		
 
 		//grouping
+		Debug.Log(currentmode);
+		grouptime+=Time.deltaTime;
 		if (currentmode == groupmode) {
-			
+			if (OVRInput.Get (OVRInput.Button.PrimaryThumbstick, OVRInput.Controller.LTouch)&&!finishgroup) {
+				if (grouptime > 0.5) {
+					if (Physics.Raycast (lefthand.transform.position, lefthand.transform.forward, out hit)) {
+						GameObject currenthit = hit.transform.gameObject;
+						Debug.Log (currenthit);
+						if (currenthit != ground && currenthit.tag != "wall" && currenthit.tag != "Player" && currenthit.tag != "selectbox"&&!currentgroup.Contains(currenthit)) {
+							currentgroup.Add (currenthit);
+							setcolor (Color.red, currenthit);
+							grouptime = 0;
+						}
+					}
+				}
+			}
+			if (OVRInput.Get (OVRInput.Button.Two, OVRInput.Controller.LTouch)) {
+				if (!finishgroup) {
+					grouptime = 0;
+					finishgroup = true;
+					foreach (GameObject g in currentgroup) {
+						hold (g, lefthand);
+					}
+				} else if (grouptime > 0.5) {
+					if (!endgroup) {
+						endgroup = true;
+						grouptime = 0;
+						foreach (GameObject g in currentgroup) {
+							g.transform.SetParent (GameObject.Find ("wall").transform);
+							setcolor (Color.white, g);
+							release (g);
+						}
+					} 
+				}
+			}
+			if (finishgroup&&!endgroup) {
+				foreach (GameObject g in currentgroup) {
+					g.transform.position += 0.1f * lefthand.transform.forward * OVRInput.Get (OVRInput.Axis2D.PrimaryThumbstick) [1];
+					g.GetComponent<Rigidbody> ().velocity = Vector3.zero;
+				}
+			}
+			else if (endgroup&&grouptime > 1) {
+				foreach (GameObject g in currentgroup) {
+					pointup (g);
+				}
+				currentgroup.Clear ();
+			}
 		}
 	}
 
 	void decideMode()
 	{
 		modetime += Time.deltaTime;
-		if (modetime > 1) {
+		if (modetime > 0.5) {
 			if (OVRInput.Get (OVRInput.Button.PrimaryIndexTrigger, OVRInput.Controller.LTouch)) {
 				if (Physics.Raycast (lefthand.transform.position, lefthand.transform.forward, out hit)) {
 					GameObject hitob = hit.transform.gameObject;
 					if (hitob.tag == "selectbox") {
 						modetime = 0;
-						Debug.Log (hitob.name);
-
 						if (hitob.name == "group") {
-							if (currentmode != groupmode) {
-								currentmode = groupmode;
-								Renderer render = hitob.GetComponent<Renderer> ();
-								Material newmat = new Material(render.material);
-								Color red = new Color (1, 0, 0, 1);
-								newmat.SetColor ("_Color", red);
-								render.material = newmat;
-								clearleftselection ();
-								clearrightselection ();
-							} else {
-								Renderer render = hitob.GetComponent<Renderer> ();
-								Material newmat = new Material(render.material);
-								Color white = new Color (1, 1, 1, 1);
-								newmat.SetColor ("_Color", white);
-								render.material = newmat;
-								currentmode = selectmode;
-							}
+							setMode (groupmode);
+						}
+						if (hitob.name == "copy") {
+							setMode (copymode);
+						}
+						if (hitob.name == "distance") {
+							setMode (distmode);
 						}
 					}
 				}
@@ -175,30 +206,79 @@ public class teleport : MonoBehaviour {
 		}
 	}
 
+
+	void hold(GameObject g, GameObject hand)
+	{
+		g.transform.SetParent (hand.transform);
+		g.GetComponent<Rigidbody> ().useGravity = false;
+		g.GetComponent<Rigidbody> ().constraints = RigidbodyConstraints.FreezeRotation;
+		g.GetComponent<Rigidbody> ().collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+	}
+	void release(GameObject g){
+		g.transform.SetParent (GameObject.Find ("wall").transform);
+		g.GetComponent<Rigidbody> ().useGravity = true;
+		g.GetComponent<Rigidbody> ().constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationY;
+		g.GetComponent<Rigidbody> ().collisionDetectionMode = CollisionDetectionMode.Discrete;
+	}
+	void setMode(int i)
+	{
+		if (currentmode != i) {
+			if (currentmode == selectmode) {
+				clearleftselection ();
+				clearrightselection ();
+			} else {
+				setcolor (Color.white,selectboxes [currentmode - 1]);
+			}
+			if (currentmode == groupmode) {
+				grouptime = 0;
+				finishgroup = false;
+				endgroup = false;
+				foreach (GameObject g in currentgroup) {
+					setcolor (Color.white, g);
+				}
+			}
+			currentmode = i;
+			setcolor (Color.red, selectboxes [i - 1]);
+		} else {
+			setcolor (Color.white, selectboxes [i - 1]);
+			currentmode = selectmode;
+		}
+	}
+
+	void setcolor(Color cor,GameObject obj)
+	{
+		Renderer[] render = obj.GetComponentsInChildren<Renderer> ();
+		foreach (Renderer r in render){
+			Material[] oldmats = r.materials;
+			for(int i=0;i<oldmats.Length;i++) {
+				Material newmat = new Material (oldmats[i]);
+				newmat.SetColor ("_Color", cor);
+				oldmats[i] = newmat;
+			}
+			r.materials = oldmats;
+		}
+	}
+
 	void clearleftselection(){
 		if (leftcurrent != null) {
-			leftcurrent.transform.SetParent (GameObject.Find ("wall").transform);
-			leftcurrent.GetComponent<Rigidbody> ().useGravity = true;
-			leftcurrent.GetComponent<Rigidbody> ().constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationY;
-			leftcurrent.GetComponent<Rigidbody> ().collisionDetectionMode = CollisionDetectionMode.Discrete;
+			release (leftcurrent);
 			leftpre = leftcurrent;
 			leftstilltime = 0;
 			leftcurrent = null;
 			leftholdtime = 0;
 		}
 	}
+
 	void clearrightselection(){
 		if (rightcurrent != null) {
-			rightcurrent.transform.SetParent (GameObject.Find ("wall").transform);
-			rightcurrent.GetComponent<Rigidbody> ().useGravity = true;
-			rightcurrent.GetComponent<Rigidbody> ().constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationY;
-			rightcurrent.GetComponent<Rigidbody> ().collisionDetectionMode = CollisionDetectionMode.Discrete;
+			release (rightcurrent);
 			rightpre = rightcurrent;
 			rightstilltime = 0;
 			rightcurrent = null;
 			rightholdtime = 0;
 		}
 	}
+
 	void straightFall()
 	{
 		if (leftpre != null) {
@@ -207,11 +287,7 @@ public class teleport : MonoBehaviour {
 			} else {
 				leftstilltime += Time.deltaTime;
 				if (leftstilltime > 0.6f) {
-					Vector3 axis = Vector3.Cross (new Vector3 (0, 1, 0), leftpre.transform.forward);
-					float dot = Vector3.Dot (new Vector3 (0, 1, 0), Vector3.Normalize (leftpre.transform.forward));
-					leftpre.GetComponent<Rigidbody> ().isKinematic = true;
-					leftpre.transform.RotateAround (leftpre.transform.position, axis, -Mathf.Acos (dot) / Mathf.PI * 180.0f);
-					leftpre.GetComponent<Rigidbody> ().isKinematic = false;
+					pointup (leftpre);
 					leftpre = null;
 					leftstilltime = 0;
 				}
@@ -223,16 +299,21 @@ public class teleport : MonoBehaviour {
 			} else {
 				rightstilltime += Time.deltaTime;
 				if (rightstilltime > 0.6f) {
-					Vector3 axis = Vector3.Cross (new Vector3 (0, 1, 0), rightpre.transform.forward);
-					float dot = Vector3.Dot (new Vector3 (0, 1, 0), Vector3.Normalize (rightpre.transform.forward));
-					rightpre.GetComponent<Rigidbody> ().isKinematic = true;
-					rightpre.transform.RotateAround (rightpre.transform.position, axis, -Mathf.Acos (dot) / Mathf.PI * 180.0f);
-					rightpre.GetComponent<Rigidbody> ().isKinematic = false;
+					pointup (rightpre);
 					rightpre = null;
 					rightstilltime = 0;
 				}
 			}
 		}
+	}
+
+	void pointup(GameObject g)
+	{
+		Vector3 axis = Vector3.Cross (new Vector3 (0, 1, 0), g.transform.forward);
+		float dot = Vector3.Dot (new Vector3 (0, 1, 0), Vector3.Normalize (g.transform.forward));
+		g.GetComponent<Rigidbody> ().isKinematic = true;
+		g.transform.RotateAround (g.transform.position, axis, -Mathf.Acos (dot) / Mathf.PI * 180.0f);
+		g.GetComponent<Rigidbody> ().isKinematic = false;
 	}
 
 	void DrawLine(Vector3 start, Vector3 end,Color color,float duration=0.1f)
