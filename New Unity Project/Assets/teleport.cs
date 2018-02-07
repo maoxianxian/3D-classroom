@@ -31,9 +31,11 @@ public class teleport : MonoBehaviour {
 	bool finishgroup = false;
 	bool endgroup=false;
 	GameObject[] selectboxes;
+	Queue<Material> matque;
 	List<GameObject> currentgroup;
 	// Use this for initialization
 	void Start () {
+		matque = new Queue<Material> ();
 		ground = GameObject.FindGameObjectWithTag ("floor");
 		closePlayer = GameObject.FindGameObjectWithTag ("closeplayer");
 		lefthand = closePlayer.transform.GetChild(2).gameObject;
@@ -132,16 +134,23 @@ public class teleport : MonoBehaviour {
 		
 
 		//grouping
-		Debug.Log(currentmode);
+
 		grouptime+=Time.deltaTime;
 		if (currentmode == groupmode) {
 			if (OVRInput.Get (OVRInput.Button.PrimaryThumbstick, OVRInput.Controller.LTouch)&&!finishgroup) {
 				if (grouptime > 0.5) {
 					if (Physics.Raycast (lefthand.transform.position, lefthand.transform.forward, out hit)) {
 						GameObject currenthit = hit.transform.gameObject;
-						Debug.Log (currenthit);
 						if (currenthit != ground && currenthit.tag != "wall" && currenthit.tag != "Player" && currenthit.tag != "selectbox"&&!currentgroup.Contains(currenthit)) {
 							currentgroup.Add (currenthit);
+
+							Renderer[] rends=currenthit.GetComponentsInChildren<Renderer> ();
+							foreach (Renderer r in rends) {
+								Material[] ms = r.materials;
+								foreach (Material m in ms){
+									matque.Enqueue (new Material(m));
+								}
+							}
 							setcolor (Color.red, currenthit);
 							grouptime = 0;
 						}
@@ -159,11 +168,7 @@ public class teleport : MonoBehaviour {
 					if (!endgroup) {
 						endgroup = true;
 						grouptime = 0;
-						foreach (GameObject g in currentgroup) {
-							g.transform.SetParent (GameObject.Find ("wall").transform);
-							setcolor (Color.white, g);
-							release (g);
-						}
+						resetGroupMat ();
 					} 
 				}
 			}
@@ -177,11 +182,27 @@ public class teleport : MonoBehaviour {
 				foreach (GameObject g in currentgroup) {
 					pointup (g);
 				}
-				currentgroup.Clear ();
+				setMode (groupmode);
 			}
 		}
 	}
 
+	void resetGroupMat(){
+		if (matque.Count != 0) {
+			foreach (GameObject g in currentgroup) {
+				g.transform.SetParent (GameObject.Find ("wall").transform);
+				Renderer[] mats = g.GetComponentsInChildren<Renderer> ();
+				foreach (Renderer m in mats) {
+					Material[] mat = m.materials;
+					for (int i = 0; i < mat.Length; i++) {
+						mat [i] = matque.Dequeue ();
+					}
+					m.materials = mat;
+				}
+				release (g);
+			}
+		}
+	}
 	void decideMode()
 	{
 		modetime += Time.deltaTime;
@@ -222,26 +243,32 @@ public class teleport : MonoBehaviour {
 	}
 	void setMode(int i)
 	{
+		if (currentmode == selectmode) {
+			clearleftselection ();
+			clearrightselection ();
+		} else {
+			setcolor (Color.white,selectboxes [currentmode - 1]);
+		}
+		if (currentmode == groupmode) {
+			grouptime = 0;
+			finishgroup = false;
+			endgroup = false;
+			resetGroupMat ();
+			currentgroup.Clear ();
+		}
+
 		if (currentmode != i) {
-			if (currentmode == selectmode) {
-				clearleftselection ();
-				clearrightselection ();
-			} else {
-				setcolor (Color.white,selectboxes [currentmode - 1]);
-			}
-			if (currentmode == groupmode) {
-				grouptime = 0;
-				finishgroup = false;
-				endgroup = false;
-				foreach (GameObject g in currentgroup) {
-					setcolor (Color.white, g);
-				}
-			}
 			currentmode = i;
 			setcolor (Color.red, selectboxes [i - 1]);
 		} else {
 			setcolor (Color.white, selectboxes [i - 1]);
 			currentmode = selectmode;
+		}
+
+		if (i == groupmode) {
+			finishgroup = false;
+			endgroup = false;
+			grouptime = 0;
 		}
 	}
 
