@@ -11,6 +11,7 @@ public class teleport : MonoBehaviour {
 	GameObject closePlayer;
 	GameObject farPlayer;
 	GameObject leftpre;
+	Vector3 leftlastLocation;
 	GameObject rightpre;
 	Vector3 leftPrePos;
 	Vector3 rightPrePos;
@@ -67,60 +68,109 @@ public class teleport : MonoBehaviour {
 			if (Physics.Raycast (lefthand.transform.position, lefthand.transform.forward, out hit)) {
 				if (leftcurrent == null && leftholdtime > 1) {
 					GameObject currenthit = hit.transform.gameObject;
-					if (currenthit != ground && currenthit.tag != "wall") {
+					if (currenthit != ground && currenthit.tag != "wall"&&currenthit.tag!="Player") {
 						leftcurrent = currenthit;
 						leftcurrent.transform.parent = null;
 						leftcurrent.transform.SetParent (lefthand.transform);
+						leftlastLocation = leftcurrent.transform.position;
 						leftholdtime = 0;
-						leftcurrent.GetComponent<Rigidbody> ().isKinematic = true;
+						//leftcurrent.GetComponent<Rigidbody> ().isKinematic = true;
+						leftcurrent.GetComponent<Rigidbody> ().useGravity = false;
+						leftcurrent.GetComponent<Rigidbody> ().constraints = RigidbodyConstraints.FreezeRotation;
+						leftcurrent.GetComponent<Rigidbody> ().collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+
+						//leftcurrent.GetComponent<Rigidbody> ().detectCollisions = true;
 					} 
 				} else {
 					if (leftholdtime > 1) {
 						leftcurrent.transform.SetParent (GameObject.Find ("wall").transform);
-						leftcurrent.GetComponent<Rigidbody> ().isKinematic = false;
+						//leftcurrent.GetComponent<Rigidbody> ().isKinematic = false;
+						leftcurrent.GetComponent<Rigidbody> ().useGravity = true;
+						leftcurrent.GetComponent<Rigidbody> ().constraints = RigidbodyConstraints.FreezeRotationX|RigidbodyConstraints.FreezeRotationY;
+						leftcurrent.GetComponent<Rigidbody> ().collisionDetectionMode = CollisionDetectionMode.Discrete;
+
 						leftpre = leftcurrent;
 						leftstilltime = 0;
 						leftcurrent = null;
 						leftholdtime = 0;
 					}
 				}
+			} else if(leftcurrent !=null){
+				if (leftholdtime > 1) {
+					leftcurrent.transform.SetParent (GameObject.Find ("wall").transform);
+					//leftcurrent.GetComponent<Rigidbody> ().isKinematic = false;
+					leftcurrent.GetComponent<Rigidbody> ().useGravity = true;
+					leftcurrent.GetComponent<Rigidbody> ().constraints = RigidbodyConstraints.FreezeRotationX|RigidbodyConstraints.FreezeRotationY;
+					leftcurrent.GetComponent<Rigidbody> ().collisionDetectionMode = CollisionDetectionMode.Discrete;
+
+					leftpre = leftcurrent;
+					leftstilltime = 0;
+					leftcurrent = null;
+					leftholdtime = 0;
+				}
 			}
 		}
 
 
 		if (leftcurrent != null) {
+			leftcurrent.GetComponent<Rigidbody> ().velocity = Vector3.zero;
 			leftcurrent.transform.position += 0.1f * lefthand.transform.forward * OVRInput.Get (OVRInput.Axis2D.PrimaryThumbstick) [1];
+			//leftcurrent.GetComponent<Rigidbody> ().velocity = 0.1f * lefthand.transform.forward * OVRInput.Get (OVRInput.Axis2D.PrimaryThumbstick) [1];
 		}
 
 		//select gogo left hand
 		rightholdtime += Time.deltaTime;
-		Vector3 righthandPos=closePlayer.transform.GetChild(5).transform.localPosition;
-		farPlayer.transform.Translate ((righthandPos + new Vector3 (0.15f, 0, 0))*10.0f-farPlayer.transform.localPosition);
+		Vector3 righthandPos=closePlayer.transform.GetChild(5).transform.localPosition;			
+		farPlayer.transform.Translate ((righthandPos + new Vector3 (-0.5f, 0, 0))*10.0f-farPlayer.transform.localPosition);
 		DrawLine (righthand.transform.position, righthand.transform.position+righthand.transform.forward*0.5f, Color.blue);
 		if (OVRInput.Get (OVRInput.Axis1D.PrimaryIndexTrigger, OVRInput.Controller.RTouch)!=0) {
 			if (Physics.Raycast (righthand.transform.position, righthand.transform.forward,out hit,0.5f)) {
 				if (rightcurrent == null && rightholdtime > 1) {
 					GameObject currenthit = hit.transform.gameObject;
-					if (currenthit != ground && currenthit.tag != "wall") {
+					if (currenthit != ground && currenthit.tag != "wall"&&currenthit.tag!="Player") {
 						rightcurrent = currenthit;
 						rightcurrent.transform.parent = null;
 						rightcurrent.transform.SetParent (righthand.transform);
 						rightholdtime = 0;
-						rightcurrent.GetComponent<Rigidbody> ().isKinematic = true;
+						rightcurrent.GetComponent<Rigidbody> ().useGravity = false;
+						rightcurrent.GetComponent<Rigidbody> ().constraints = RigidbodyConstraints.FreezeRotation;
+						rightcurrent.GetComponent<Rigidbody> ().collisionDetectionMode=CollisionDetectionMode.ContinuousDynamic;
+
+						//rightcurrent.GetComponent<Rigidbody> ().isKinematic = true;
 					} 
 				} else {
 					if (rightholdtime >1) {
 						rightcurrent.transform.SetParent (GameObject.Find ("wall").transform);
-						rightcurrent.GetComponent<Rigidbody> ().isKinematic = false;
+						//rightcurrent.GetComponent<Rigidbody> ().isKinematic = false;
+						rightcurrent.GetComponent<Rigidbody> ().useGravity = true;
+						rightcurrent.GetComponent<Rigidbody> ().constraints = RigidbodyConstraints.FreezeRotationX|RigidbodyConstraints.FreezeRotationY;
+						rightcurrent.GetComponent<Rigidbody> ().collisionDetectionMode=CollisionDetectionMode.Discrete;
+
 						rightpre = rightcurrent;
 						rightstilltime = 0;
 						rightcurrent = null;
 						rightholdtime = 0;
 					}
 				}
+			}else if(rightcurrent!=null){
+				if (rightholdtime >1) {
+					rightcurrent.transform.SetParent (GameObject.Find ("wall").transform);
+					//rightcurrent.GetComponent<Rigidbody> ().isKinematic = false;
+					rightcurrent.GetComponent<Rigidbody> ().useGravity = true;
+					rightcurrent.GetComponent<Rigidbody> ().constraints = RigidbodyConstraints.FreezeRotationX|RigidbodyConstraints.FreezeRotationY;
+					rightcurrent.GetComponent<Rigidbody> ().collisionDetectionMode=CollisionDetectionMode.Discrete;
+
+					rightpre = rightcurrent;
+					rightstilltime = 0;
+					rightcurrent = null;
+					rightholdtime = 0;
+				}
 			}
 		}
 
+		if (rightcurrent != null) {
+			rightcurrent.GetComponent<Rigidbody> ().velocity = Vector3.zero;
+		}
 		//make object upright
 		if (leftpre != null) {
 			if (leftpre.transform.position != leftPrePos) {
@@ -128,10 +178,19 @@ public class teleport : MonoBehaviour {
 			} else {
 				leftstilltime += Time.deltaTime;
 				if (leftstilltime > 0.6f) {
+					//Debug.Log (leftpre.transform.forward);
 					Vector3 axis = Vector3.Cross (new Vector3 (0, 1, 0), leftpre.transform.forward);
-					float dot = Vector3.Dot (new Vector3 (0, 1, 0), Vector3.Normalize (leftpre.transform.up));
-					Debug.Log (Mathf.Acos (dot) / Mathf.PI * 180.0f);
+					float dot = Vector3.Dot (new Vector3 (0, 1, 0), Vector3.Normalize (leftpre.transform.forward));
+					//leftpre.GetComponentInChildren<BoxCollider> ().enabled=false;
+					leftpre.GetComponent<Rigidbody>().isKinematic=true;
+					//collider.enabled=false;
+
 					leftpre.transform.RotateAround (leftpre.transform.position, axis, -Mathf.Acos (dot) / Mathf.PI * 180.0f);
+					leftpre.GetComponent<Rigidbody>().isKinematic=false;
+
+					//collider.enable = true;
+					//leftpre.GetComponentInChildren<BoxCollider> ().enabled=true;
+
 					leftpre = null;
 					leftstilltime = 0;
 				}
