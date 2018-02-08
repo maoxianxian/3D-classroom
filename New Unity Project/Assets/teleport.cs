@@ -90,6 +90,7 @@ public class teleport : MonoBehaviour {
 				if (Physics.Raycast (lefthand.transform.position, lefthand.transform.forward, out hit)) {
 					if (leftcurrent == null && leftholdtime > 1) {
 						GameObject currenthit = hit.transform.gameObject;
+						Debug.Log (currenthit);
 						if (currenthit != ground && currenthit.tag != "wall" && currenthit.tag != "Player"&&currenthit.tag != "selectbox") {
 							leftcurrent = currenthit;
 							leftcurrent.transform.parent = null;
@@ -110,7 +111,9 @@ public class teleport : MonoBehaviour {
 
 			//thumbstick
 			if (leftcurrent != null) {
-				leftcurrent.GetComponent<Rigidbody> ().velocity = Vector3.zero;
+				if (leftcurrent.GetComponent<Rigidbody>() != null) {
+					leftcurrent.GetComponent<Rigidbody> ().velocity = Vector3.zero;
+				}
 				leftcurrent.transform.position += 0.1f * lefthand.transform.forward * OVRInput.Get (OVRInput.Axis2D.PrimaryThumbstick) [1];
 			}
 
@@ -142,7 +145,9 @@ public class teleport : MonoBehaviour {
 			}
 
 			if (rightcurrent != null) {
-				rightcurrent.GetComponent<Rigidbody> ().velocity = Vector3.zero;
+				if (leftcurrent.GetComponent<Rigidbody>() != null) {
+					rightcurrent.GetComponent<Rigidbody> ().velocity = Vector3.zero;
+				}
 			}
 		}
 		//make object upright
@@ -191,7 +196,9 @@ public class teleport : MonoBehaviour {
 			if (finishgroup&&!endgroup) {
 				foreach (GameObject g in currentgroup) {
 					g.transform.position += 0.1f * lefthand.transform.forward * OVRInput.Get (OVRInput.Axis2D.PrimaryThumbstick) [1];
-					g.GetComponent<Rigidbody> ().velocity = Vector3.zero;
+					if (g.GetComponent<Rigidbody> () != null) {
+						g.GetComponent<Rigidbody> ().velocity = Vector3.zero;
+					}
 				}
 			}
 			else if (endgroup&&grouptime > 1) {
@@ -314,15 +321,19 @@ public class teleport : MonoBehaviour {
 	void hold(GameObject g, GameObject hand)
 	{
 		g.transform.SetParent (hand.transform);
-		g.GetComponent<Rigidbody> ().useGravity = false;
-		g.GetComponent<Rigidbody> ().constraints = RigidbodyConstraints.FreezeRotation;
-		g.GetComponent<Rigidbody> ().collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+		if (g.GetComponent<Rigidbody> () != null) {
+			g.GetComponent<Rigidbody> ().useGravity = false;
+			g.GetComponent<Rigidbody> ().constraints = RigidbodyConstraints.FreezeRotation;
+			g.GetComponent<Rigidbody> ().collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+		}
 	}
 	void release(GameObject g){
 		g.transform.SetParent (GameObject.Find ("wall").transform);
-		g.GetComponent<Rigidbody> ().useGravity = true;
-		g.GetComponent<Rigidbody> ().constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationY;
-		g.GetComponent<Rigidbody> ().collisionDetectionMode = CollisionDetectionMode.Discrete;
+		if (g.GetComponent<Rigidbody> () != null) {
+			g.GetComponent<Rigidbody> ().useGravity = true;
+			g.GetComponent<Rigidbody> ().constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationY;
+			g.GetComponent<Rigidbody> ().collisionDetectionMode = CollisionDetectionMode.Discrete;
+		}
 	}
 	void setMode(int i)
 	{
@@ -433,9 +444,13 @@ public class teleport : MonoBehaviour {
 	{
 		Vector3 axis = Vector3.Cross (new Vector3 (0, 1, 0), g.transform.forward);
 		float dot = Vector3.Dot (new Vector3 (0, 1, 0), Vector3.Normalize (g.transform.forward));
-		g.GetComponent<Rigidbody> ().isKinematic = true;
+		if (g.GetComponent<Rigidbody> () != null) {
+			g.GetComponent<Rigidbody> ().isKinematic = true;
+		}
 		g.transform.RotateAround (g.transform.position, axis, -Mathf.Acos (dot) / Mathf.PI * 180.0f);
-		g.GetComponent<Rigidbody> ().isKinematic = false;
+		if (g.GetComponent<Rigidbody> () != null) {
+			g.GetComponent<Rigidbody> ().isKinematic = false;
+		}
 	}
 
 	void DrawLine(Vector3 start, Vector3 end,Color color,float duration=0.1f)
