@@ -37,7 +37,11 @@ public class teleport : MonoBehaviour {
 	List<GameObject> currentgroup;
 	GameObject copy;
 	List<GameObject> copies;
+	GameObject distancetext;
 	Queue<Material> matcopy;
+	GameObject ballone;
+	GameObject balltwo;
+	float disttime=0;
 	// Use this for initialization
 	void Start () {
 		matque = new Queue<Material> ();
@@ -50,8 +54,14 @@ public class teleport : MonoBehaviour {
 		selectboxes[0]=GameObject.Find ("group");
 		selectboxes[1]=GameObject.Find ("copy");
 		selectboxes[2]=GameObject.Find ("distance");
+		distancetext = GameObject.FindGameObjectWithTag ("distance");
+		distancetext.SetActive (false);
 		currentgroup = new List<GameObject> ();
 		copies = new List<GameObject> ();
+		ballone = GameObject.Find ("pointone");
+		ballone.SetActive (false);
+		balltwo = GameObject.Find ("pointtwo");
+		balltwo.SetActive (false);
 	}
 	// Update is called once per frame
 	void Update () {
@@ -235,6 +245,27 @@ public class teleport : MonoBehaviour {
 				copies.Clear ();
 			}
 		}
+		//distance
+		disttime+=Time.deltaTime;
+		if (currentmode == distmode) {
+			if (OVRInput.Get (OVRInput.Button.PrimaryThumbstick, OVRInput.Controller.LTouch)) {
+				if (disttime > 0.5) {
+					if (Physics.Raycast (lefthand.transform.position, lefthand.transform.forward, out hit)) {
+						if (ballone.activeInHierarchy==false) {
+							ballone.SetActive (true);
+							ballone.transform.position = hit.point;
+							disttime = 0;
+						} else if (balltwo.activeInHierarchy==false) {
+							balltwo.SetActive (true);
+							balltwo.transform.position = hit.point;
+							UnityEngine.UI.Text tex=distancetext.GetComponent<UnityEngine.UI.Text>();
+							tex.text = Vector3.Magnitude(ballone.transform.position-balltwo.transform.position).ToString();
+							disttime = 0;
+						}
+					}
+				}
+			}
+		}
 	}
 
 	void resetGroupMat(){
@@ -279,8 +310,7 @@ public class teleport : MonoBehaviour {
 			}
 		}
 	}
-
-
+		
 	void hold(GameObject g, GameObject hand)
 	{
 		g.transform.SetParent (hand.transform);
@@ -309,20 +339,32 @@ public class teleport : MonoBehaviour {
 			resetGroupMat ();
 			currentgroup.Clear ();
 		}
+		if (currentmode == distmode) {
+			ballone.SetActive (false);
+			balltwo.SetActive (false);
+			distancetext.SetActive (false);
+		}
 
 		if (currentmode != i) {
 			currentmode = i;
 			setcolor (Color.red, selectboxes [i - 1]);
+			if (i == groupmode) {
+				finishgroup = false;
+				endgroup = false;
+				grouptime = 0;
+			}
+			if (i == distmode) {
+				distancetext.SetActive (true);
+				UnityEngine.UI.Text tex=distancetext.GetComponent<UnityEngine.UI.Text>();
+				tex.text = "pick your points";
+				disttime = 0;
+			}
 		} else {
 			setcolor (Color.white, selectboxes [i - 1]);
 			currentmode = selectmode;
 		}
 
-		if (i == groupmode) {
-			finishgroup = false;
-			endgroup = false;
-			grouptime = 0;
-		}
+
 	}
 
 	void setcolor(Color cor,GameObject obj)
