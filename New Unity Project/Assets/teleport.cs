@@ -32,7 +32,12 @@ public class teleport : MonoBehaviour {
 	bool endgroup=false;
 	GameObject[] selectboxes;
 	Queue<Material> matque;
+	bool copying=false;
+	float copytime=0;
 	List<GameObject> currentgroup;
+	GameObject copy;
+	List<GameObject> copies;
+	Queue<Material> matcopy;
 	// Use this for initialization
 	void Start () {
 		matque = new Queue<Material> ();
@@ -46,6 +51,7 @@ public class teleport : MonoBehaviour {
 		selectboxes[1]=GameObject.Find ("copy");
 		selectboxes[2]=GameObject.Find ("distance");
 		currentgroup = new List<GameObject> ();
+		copies = new List<GameObject> ();
 	}
 	// Update is called once per frame
 	void Update () {
@@ -185,6 +191,43 @@ public class teleport : MonoBehaviour {
 				setMode (groupmode);
 			}
 		}
+
+		//copy
+		copytime += Time.deltaTime;
+		if (copying) {
+			if (currentmode == selectmode) {
+				if (rightcurrent != null) {
+					copy = GameObject.Instantiate (rightcurrent, rightcurrent.transform.position, righthand.transform.rotation, righthand.transform.parent);
+					release (copy);
+				}
+			}
+			if (currentmode == groupmode) {
+				foreach (GameObject g in currentgroup) {
+					GameObject copyg=GameObject.Instantiate (g,g.transform.position,g.transform.rotation,g.transform.parent);
+					release (copyg);
+					copies.Add (copyg);
+				}
+				matcopy = new Queue<Material> (matque);
+				//to do
+			}
+			copying = false;
+			copytime = 0;
+		}
+		if (copytime > 1) {
+			setcolor (Color.white, selectboxes [1]);
+			if (currentmode == selectmode) {
+				if (copy != null) {
+					pointup (copy);
+					copy = null;
+				}
+			}
+			if (currentmode == groupmode) {
+				foreach (GameObject g in copies) {
+					pointup (g);
+				}
+				copies.Clear ();
+			}
+		}
 	}
 
 	void resetGroupMat(){
@@ -216,7 +259,10 @@ public class teleport : MonoBehaviour {
 							setMode (groupmode);
 						}
 						if (hitob.name == "copy") {
-							setMode (copymode);
+							if (copytime > 1) {
+								copying = true;
+								setcolor (Color.red, selectboxes [1]);
+							}
 						}
 						if (hitob.name == "distance") {
 							setMode (distmode);
