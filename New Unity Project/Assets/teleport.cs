@@ -202,13 +202,20 @@ public class teleport : MonoBehaviour {
 				}
 			}
 			if (currentmode == groupmode) {
+				matcopy = new Queue<Material> (matque);
 				foreach (GameObject g in currentgroup) {
 					GameObject copyg=GameObject.Instantiate (g,g.transform.position,g.transform.rotation,g.transform.parent);
 					release (copyg);
+					Renderer[] mats = copyg.GetComponentsInChildren<Renderer> ();
+					foreach (Renderer m in mats) {
+						Material[] mat = m.materials;
+						for (int i = 0; i < mat.Length; i++) {
+							mat [i] = matcopy.Dequeue ();
+						}
+						m.materials = mat;
+					}
 					copies.Add (copyg);
 				}
-				matcopy = new Queue<Material> (matque);
-				//to do
 			}
 			copying = false;
 			copytime = 0;
