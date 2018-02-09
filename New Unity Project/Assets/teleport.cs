@@ -90,8 +90,7 @@ public class teleport : MonoBehaviour {
 				if (Physics.Raycast (lefthand.transform.position, lefthand.transform.forward, out hit)) {
 					if (leftcurrent == null && leftholdtime > 1) {
 						GameObject currenthit = hit.transform.gameObject;
-						Debug.Log (currenthit);
-						if (currenthit != ground && currenthit.tag != "wall" && currenthit.tag != "Player"&&currenthit.tag != "selectbox") {
+						if (currenthit != ground && currenthit.tag != "wall" && currenthit.tag != "Player"&&currenthit.tag != "selectbox"&&currenthit.name!="room") {
 							leftcurrent = currenthit;
 							leftcurrent.transform.parent = null;
 							leftholdtime = 0;
@@ -120,8 +119,8 @@ public class teleport : MonoBehaviour {
 			//select gogo left hand
 			rightholdtime += Time.deltaTime;
 			Vector3 righthandPos = closePlayer.transform.GetChild (5).transform.localPosition;			
-			farPlayer.transform.Translate ((righthandPos + new Vector3 (-0.5f, 0, 0)) * 10.0f - farPlayer.transform.localPosition);
-			DrawLine (righthand.transform.position, righthand.transform.position + righthand.transform.forward * 0.5f, Color.blue);
+			farPlayer.transform.Translate ((righthandPos + new Vector3 (0.5f, -0.2f, -0.1f)) * 10.0f - farPlayer.transform.localPosition);
+			DrawLine (righthand.transform.position, righthand.transform.position + righthand.transform.forward * 0.25f, Color.blue);
 			if (OVRInput.Get (OVRInput.Axis1D.PrimaryIndexTrigger, OVRInput.Controller.RTouch) != 0) {
 				if (Physics.Raycast (righthand.transform.position, righthand.transform.forward, out hit, 0.5f)) {
 					if (rightcurrent == null && rightholdtime > 1) {
@@ -145,7 +144,7 @@ public class teleport : MonoBehaviour {
 			}
 
 			if (rightcurrent != null) {
-				if (leftcurrent.GetComponent<Rigidbody>() != null) {
+				if (rightcurrent.GetComponent<Rigidbody>() != null) {
 					rightcurrent.GetComponent<Rigidbody> ().velocity = Vector3.zero;
 				}
 			}
